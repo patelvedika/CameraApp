@@ -8,6 +8,11 @@ import {
   useState,
 } from "react";
 import {
+  heicToJpegFile,
+  isHeicLike,
+  isRenderableRasterImage,
+} from "@/lib/heic";
+import {
   PRESETS,
   type Preset,
   type PresetId,
@@ -67,17 +72,32 @@ export function ImageLab() {
 
   const onPickFiles = async (files: FileList | null) => {
     const file = files?.[0];
-    if (!file || !file.type.startsWith("image/")) {
-      setError("Please choose a JPG, PNG, or WebP file.");
+    if (!file || !isRenderableRasterImage(file)) {
+      setError("Please choose a JPG, PNG, WebP, or HEIC/HEIF file.");
       return;
     }
     setError(null);
     setBusy(true);
     disposeSourceUrl();
     try {
-      const img = await loadImageFromFile(file);
-      const url = URL.createObjectURL(file);
-      setSourceFile(file);
+      let working = file;
+      if (isHeicLike(file)) {
+        try {
+          working = await heicToJpegFile(file);
+        } catch {
+          setError(
+            "Could not convert this HEIC/HEIF file. Try another photo, or export as JPEG from Photos.",
+          );
+          setSourceFile(null);
+          setNaturalSize(null);
+          setResultUrl(null);
+          imgRef.current = null;
+          return;
+        }
+      }
+      const img = await loadImageFromFile(working);
+      const url = URL.createObjectURL(working);
+      setSourceFile(working);
       setSourceObjectUrl(url);
       setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
       imgRef.current = img;
@@ -203,7 +223,8 @@ export function ImageLab() {
                   Add a photo to open the lab
                 </span>
                 <span className="mt-2 max-w-sm text-sm text-zinc-500">
-                  JPG, PNG, or WebP — processed locally in your browser.
+                  JPG, PNG, WebP, or iPhone HEIC — processed locally in your
+                  browser.
                 </span>
               </button>
             ) : (
