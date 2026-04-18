@@ -338,11 +338,6 @@ export function ImageLab() {
                 );
               })}
             </ul>
-            <p className="text-[11px] leading-relaxed text-zinc-600">
-              Profiles run entirely in your browser: nothing is uploaded to a
-              server. For hackathon demos, pair this with weekly “look drops”
-              or remix prompts so users have a reason to return with new photos.
-            </p>
           </aside>
         </div>
       </section>
