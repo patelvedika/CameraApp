@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { CameraPresetIcon } from "@/components/CameraPresetIcon";
 import {
   heicToJpegFile,
   isHeicLike,
@@ -19,6 +20,7 @@ import {
   getPreset,
   renderWithPreset,
 } from "@/lib/presets";
+import { getWeeklyDropInfo, weeklyDropBlurbFor } from "@/lib/weeklyDrop";
 
 function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -51,6 +53,16 @@ export function ImageLab() {
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const preset = useMemo(() => getPreset(presetId), [presetId]);
+
+  const weeklyDrop = useMemo(() => {
+    const { presetId, weekStartsLabel } = getWeeklyDropInfo();
+    return {
+      presetId,
+      weekStartsLabel,
+      preset: getPreset(presetId),
+      blurb: weeklyDropBlurbFor(presetId),
+    };
+  }, []);
 
   const disposeSourceUrl = useCallback(() => {
     setSourceObjectUrl((prev) => {
@@ -192,6 +204,41 @@ export function ImageLab() {
         </div>
       </header>
 
+      <div className="flex flex-col gap-4 rounded-2xl border border-amber-400/25 bg-gradient-to-r from-amber-400/10 via-amber-400/5 to-transparent px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-5 sm:py-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <CameraPresetIcon
+            id={weeklyDrop.presetId}
+            className="h-11 w-11 shrink-0 text-amber-300"
+          />
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-200/90">
+              Weekly look drop
+            </p>
+            <p className="mt-1 text-base font-semibold text-zinc-50">
+              {weeklyDrop.preset.label}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+              Week of {weeklyDrop.weekStartsLabel} — {weeklyDrop.blurb}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-stretch gap-1.5 sm:items-end">
+          <button
+            type="button"
+            disabled={!sourceObjectUrl}
+            onClick={() => setPresetId(weeklyDrop.presetId)}
+            className="inline-flex items-center justify-center rounded-full bg-amber-400 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400 disabled:hover:bg-zinc-700"
+          >
+            Apply this week&apos;s look
+          </button>
+          {!sourceObjectUrl && (
+            <span className="text-center text-[11px] text-zinc-500 sm:text-right">
+              Upload a photo to try the drop.
+            </span>
+          )}
+        </div>
+      </div>
+
       <input
         ref={inputRef}
         type="file"
@@ -320,19 +367,30 @@ export function ImageLab() {
                       onClick={() => setPresetId(p.id)}
                       disabled={!sourceObjectUrl}
                       className={[
-                        "flex w-full flex-col rounded-2xl border px-4 py-3 text-left transition",
+                        "group flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition",
                         active
                           ? "border-amber-400/50 bg-amber-400/10 shadow-[0_0_0_1px_rgba(251,191,36,0.25)]"
                           : "border-white/5 bg-zinc-950/40 hover:border-white/15 hover:bg-zinc-900/60",
                         !sourceObjectUrl ? "cursor-not-allowed opacity-40" : "",
                       ].join(" ")}
                     >
-                      <span className="text-sm font-medium text-zinc-50">
-                        {p.label}
-                      </span>
-                      <span className="mt-0.5 text-xs text-zinc-500">
-                        {p.subtitle}
-                      </span>
+                      <CameraPresetIcon
+                        id={p.id}
+                        className={[
+                          "h-10 w-10",
+                          active
+                            ? "text-amber-300"
+                            : "text-zinc-500 group-hover:text-zinc-400",
+                        ].join(" ")}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-medium text-zinc-50">
+                          {p.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-snug text-zinc-500">
+                          {p.subtitle}
+                        </span>
+                      </div>
                     </button>
                   </li>
                 );
